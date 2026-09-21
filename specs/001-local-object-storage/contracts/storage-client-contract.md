@@ -1,0 +1,102 @@
+# Interface Contract: Object Storage Python Client (Async)
+
+**Feature**: `001-local-object-storage`  
+**Target Module**: `src/knowledge_platform/storage/client.py`  
+**Status**: Completed & Refined  
+
+---
+
+## 1. Overview
+Defines the asynchronous programmatic contract for interacting with the local object storage service. Used by downstream services (document ingestion, chunking, indexing) to verify bucket readiness, list source documents, and stream document contents without blocking the Python asyncio event loop.
+
+---
+
+## 2. Pydantic Response Models
+
+```python
+from datetime import datetime
+from pydantic import BaseModel, Field
+
+
+class DocumentMetadata(BaseModel):
+    """Metadata describing an object in the knowledge-source bucket."""
+
+    key: str = Field(..., description="Object key or filename")
+    bucket: str = Field(..., description="Parent bucket name")
+    size_bytes: int = Field(..., ge=0, description="Size of document in bytes")
+    content_type: str = Field(
+        ..., description="Detected MIME content type of document"
+    )
+    etag: str = Field(..., description="ETag / MD5 content checksum")
+    last_modified: datetime = Field(
+        ..., description="Last modification timestamp in UTC"
+    )
+
+
+class BucketStatus(BaseModel):
+    """Status report for a verified storage bucket."""
+
+    name: str = Field(..., description="Bucket name")
+    exists: bool = Field(..., description="Whether the bucket currently exists")
+    total_objects: int = Field(
+        default=0, ge=0, description="Number of objects present in bucket"
+    )
+```
+
+---
+
+## 3. Protocol Definition: `AsyncStorageClientProtocol`
+
+```python
+from typing import Protocol, runtime_checkable
+from collections.abc import AsyncIterator
+from types import TracebackType
+
+
+@runtime_checkable
+class AsyncStorageClientProtocol(Protocol):
+    """Asynchronous interface for object storage operations."""
+
+    async def __aenter__(self) -> "AsyncStorageClientProtocol":
+        """Initialize and open the underlying aioboto3 session resources."""
+        ...
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
+        """Clean up underlying connections and resources."""
+        ...
+
+    async def verify_bucket_exists(self, bucket_name: str) -> bool:
+        """Asynchronously check if a specific bucket exists in the storage cluster."""
+        ...
+
+    async def list_documents(
+        self, bucket_name: str, prefix: str = ""
+    ) -> list[DocumentMetadata]:
+        """Asynchronously list all documents residing in the specified bucket."""
+        ...
+
+    async def get_document_stream(
+        self, bucket_name: str, key: str, chunk_size: int = 65536
+    ) -> AsyncIterator[bytes]:
+        """Asynchronously stream the raw bytes of a document from the bucket."""
+        ...
+
+    async def get_document_bytes(self, bucket_name: str, key: str) -> bytes:
+        """Asynchronously retrieve complete byte contents of a document."""
+        ...
+
+    async def put_document_bytes(
+        self,
+        bucket_name: str,
+        key: str,
+        data: bytes,
+        content_type: str = "application/octet-stream",
+    ) -> DocumentMetadata:
+        """Upload raw bytes into a bucket (primarily for testing and synthetic seeding)."""
+        ...
+```

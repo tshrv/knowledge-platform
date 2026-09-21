@@ -13,6 +13,7 @@
 ### Session 2026-09-21
 - Q: How should files be uploaded into the storage bucket? → A: Use an object storage provider that includes a built-in web management UI out of the box, eliminating the need to implement custom upload UI or custom upload application endpoints.
 - Q: What is the default bucket name? → A: `knowledge-source` (auto-provisioned on environment startup).
+- Q: What paradigm should be used for programmatic storage access by downstream services? → A: An asynchronous (async/await) approach MUST be preferred over synchronous calls for all downstream service interactions.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -47,18 +48,18 @@ A user accesses the storage provider's built-in web console via a local browser,
 
 ---
 
-### User Story 3 - Programmatic Object Access for Downstream Ingestion (Priority: P2)
+### User Story 3 - Asynchronous Programmatic Object Access for Downstream Ingestion (Priority: P2)
 
-Downstream processing components and agent pipelines can list and retrieve source documents residing in the `knowledge-source` bucket via standard object storage APIs for enrichment, chunking, and indexing.
+Downstream processing components and agent pipelines can list and retrieve source documents residing in the `knowledge-source` bucket asynchronously using non-blocking calls (async/await) via standard object storage protocols for enrichment, chunking, and indexing.
 
-**Why this priority**: Essential for allowing automated pipelines to ingest and process documents uploaded via the web UI.
+**Why this priority**: Essential for allowing automated pipelines to ingest and process documents concurrently without blocking event loops during I/O operations.
 
-**Independent Test**: Upload documents via the web UI or API, then programmatically query the bucket via S3-compatible client to list objects and stream contents, verifying exact checksum matches.
+**Independent Test**: Upload documents via the web UI or API, then programmatically query the bucket using an asynchronous client to list objects and stream contents, verifying non-blocking execution and exact checksum matches.
 
 **Acceptance Scenarios**:
 
-1. **Given** documents uploaded to the `knowledge-source` bucket, **When** a downstream service requests a bucket listing via standard storage API, **Then** all objects are returned with names, sizes, content types, and timestamps.
-2. **Given** an object exists in `knowledge-source`, **When** a downstream service retrieves the object by key, **Then** the exact byte stream is returned.
+1. **Given** documents uploaded to the `knowledge-source` bucket, **When** a downstream service asynchronously requests a bucket listing via storage API, **Then** all objects are returned with names, sizes, content types, and timestamps without blocking the caller's event loop.
+2. **Given** an object exists in `knowledge-source`, **When** a downstream service retrieves the object by key via an asynchronous stream, **Then** the exact byte stream is delivered non-blockingly.
 
 ---
 
@@ -78,7 +79,7 @@ Downstream processing components and agent pipelines can list and retrieve sourc
 - **FR-003**: Storage provider MUST include a built-in web management console accessible locally via a web browser.
 - **FR-004**: Users MUST be able to authenticate into the built-in web console using defined local credentials and upload single or multiple source documents directly into the `knowledge-source` bucket.
 - **FR-005**: System MUST persist all bucket configurations and uploaded documents across container and service restarts using persistent local volume storage.
-- **FR-006**: Storage service MUST expose standard S3-compatible API endpoints allowing downstream services to list and retrieve documents stored in `knowledge-source`.
+- **FR-006**: Storage service client interface exposed for downstream services MUST support non-blocking asynchronous operations (async/await) to list and retrieve documents stored in `knowledge-source`.
 - **FR-007**: System MUST NOT require custom application upload UI or custom upload backend endpoints, delegating document ingress entirely to the provider's built-in console.
 
 ### Key Entities *(include if feature involves data)*
@@ -94,7 +95,7 @@ Downstream processing components and agent pipelines can list and retrieve sourc
 - **SC-001**: Local object storage service, API endpoints, and built-in web console are fully initialized and accessible within 15 seconds of environment startup.
 - **SC-002**: The default bucket `knowledge-source` is automatically verified as created and available upon initial service startup with 100% reliability.
 - **SC-003**: Users can successfully log into the built-in web console in under 5 seconds and complete multi-file document uploads directly through the provider interface.
-- **SC-004**: 100% of documents uploaded via the web console are retrievable by downstream services with matching checksums.
+- **SC-004**: 100% of documents uploaded via the web console are retrievable by downstream services asynchronously with matching checksums.
 - **SC-005**: All stored documents and bucket configurations persist with zero data loss across repeated service restart cycles.
 
 ## Assumptions
