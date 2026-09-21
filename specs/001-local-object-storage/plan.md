@@ -81,6 +81,7 @@ specs/001-local-object-storage/
 │       └── storage/
 │           ├── __init__.py
 │           ├── client.py
+│           ├── exceptions.py
 │           └── models.py
 └── tests/
     └── integration/

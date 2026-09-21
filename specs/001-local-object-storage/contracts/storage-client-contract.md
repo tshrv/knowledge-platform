@@ -45,7 +45,47 @@ class BucketStatus(BaseModel):
 
 ---
 
-## 3. Protocol Definition: `AsyncStorageClientProtocol`
+## 3. Domain Exception Hierarchy
+
+Domain exceptions prevent raw underlying transport and client errors (e.g. `botocore.exceptions.ClientError`) from leaking across architectural boundaries, ensuring adherence to Constitution Principle I.
+
+```python
+class StorageError(Exception):
+    """Base exception for all storage client errors."""
+
+    pass
+
+
+class StorageConnectionError(StorageError):
+    """Raised when connection to MinIO fails or times out."""
+
+    pass
+
+
+class BucketNotFoundError(StorageError):
+    """Raised when the specified bucket does not exist."""
+
+    def __init__(self, bucket_name: str, message: str | None = None) -> None:
+        super().__init__(message or f"Bucket '{bucket_name}' not found.")
+        self.bucket_name = bucket_name
+
+
+class DocumentNotFoundError(StorageError):
+    """Raised when the specified object key does not exist in the bucket."""
+
+    def __init__(
+        self, bucket_name: str, key: str, message: str | None = None
+    ) -> None:
+        super().__init__(
+            message or f"Document '{key}' not found in bucket '{bucket_name}'."
+        )
+        self.bucket_name = bucket_name
+        self.key = key
+```
+
+---
+
+## 4. Protocol Definition: `AsyncStorageClientProtocol`
 
 ```python
 from typing import Protocol, runtime_checkable
@@ -58,7 +98,11 @@ class AsyncStorageClientProtocol(Protocol):
     """Asynchronous interface for object storage operations."""
 
     async def __aenter__(self) -> "AsyncStorageClientProtocol":
-        """Initialize and open the underlying aioboto3 session resources."""
+        """Initialize and open the underlying aioboto3 session resources.
+        
+        Raises:
+            StorageConnectionError: If session initialization fails.
+        """
         ...
 
     async def __aexit__(
@@ -71,23 +115,44 @@ class AsyncStorageClientProtocol(Protocol):
         ...
 
     async def verify_bucket_exists(self, bucket_name: str) -> bool:
-        """Asynchronously check if a specific bucket exists in the storage cluster."""
+        """Asynchronously check if a specific bucket exists in the storage cluster.
+        
+        Raises:
+            StorageConnectionError: If MinIO is unreachable.
+        """
         ...
 
     async def list_documents(
         self, bucket_name: str, prefix: str = ""
     ) -> list[DocumentMetadata]:
-        """Asynchronously list all documents residing in the specified bucket."""
+        """Asynchronously list all documents residing in the specified bucket.
+        
+        Raises:
+            BucketNotFoundError: If bucket_name does not exist.
+            StorageConnectionError: If MinIO is unreachable.
+        """
         ...
 
     async def get_document_stream(
         self, bucket_name: str, key: str, chunk_size: int = 65536
     ) -> AsyncIterator[bytes]:
-        """Asynchronously stream the raw bytes of a document from the bucket."""
+        """Asynchronously stream the raw bytes of a document from the bucket.
+        
+        Raises:
+            BucketNotFoundError: If bucket_name does not exist.
+            DocumentNotFoundError: If key does not exist in the bucket.
+            StorageConnectionError: If MinIO is unreachable.
+        """
         ...
 
     async def get_document_bytes(self, bucket_name: str, key: str) -> bytes:
-        """Asynchronously retrieve complete byte contents of a document."""
+        """Asynchronously retrieve complete byte contents of a document.
+        
+        Raises:
+            BucketNotFoundError: If bucket_name does not exist.
+            DocumentNotFoundError: If key does not exist in the bucket.
+            StorageConnectionError: If MinIO is unreachable.
+        """
         ...
 
     async def put_document_bytes(
@@ -97,6 +162,11 @@ class AsyncStorageClientProtocol(Protocol):
         data: bytes,
         content_type: str = "application/octet-stream",
     ) -> DocumentMetadata:
-        """Upload raw bytes into a bucket (primarily for testing and synthetic seeding)."""
+        """Upload raw bytes into a bucket (primarily for testing and synthetic seeding).
+        
+        Raises:
+            BucketNotFoundError: If bucket_name does not exist.
+            StorageConnectionError: If MinIO is unreachable.
+        """
         ...
 ```

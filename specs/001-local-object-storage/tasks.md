@@ -22,7 +22,7 @@ description: "Task list for local object storage implementation"
 **Purpose**: Project dependency configuration and environment initialization
 
 - [ ] T001 Configure project dependencies in `pyproject.toml` including `aioboto3>=13.2.0`, `aiobotocore>=2.15.0`, `pydantic>=2.9.0`, `pydantic-settings>=2.5.0`, `httpx>=0.27.0`, and dev dependencies `pytest>=8.3.0`, `pytest-asyncio>=0.24.0`, `ruff>=0.6.0`, `mypy>=1.11.0`, `boto3-stubs[s3]>=1.35.0`
-- [ ] T002 [P] Create local environment configuration template `.env.example` with `MINIO_ROOT_USER=admin`, `MINIO_ROOT_PASSWORD=minioadmin123`, `MINIO_PORT=9000`, `MINIO_CONSOLE_PORT=9001`, `MINIO_DEFAULT_BUCKET=knowledge-source` per contract in `specs/001-local-object-storage/contracts/docker-compose-contract.md`
+- [ ] T002 [P] Create local environment configuration template `.env.example` with `MINIO_ROOT_USER=admin`, `MINIO_ROOT_PASSWORD=minioadmin123`, `MINIO_HOST=localhost`, `MINIO_PORT=9000`, `MINIO_CONSOLE_PORT=9001`, `MINIO_DEFAULT_BUCKET=knowledge-source` per contract in `specs/001-local-object-storage/contracts/docker-compose-contract.md`
 - [ ] T003 [P] Ensure `.env` is listed in `.gitignore` to prevent credential leakage into version control
 - [ ] T004 Initialize package directory structure creating `src/knowledge_platform/storage/` and `tests/integration/`
 
@@ -34,9 +34,10 @@ description: "Task list for local object storage implementation"
 
 **⚠️ CRITICAL**: Foundational tasks must be completed before implementing user stories
 
-- [ ] T005 [P] Implement `StorageSettings` in `src/knowledge_platform/config.py` using `pydantic-settings` with field aliases for `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD`, `MINIO_PORT`, `MINIO_CONSOLE_PORT`, `MINIO_DEFAULT_BUCKET`, and properties for `endpoint_url` and `console_url` per `specs/001-local-object-storage/data-model.md`
+- [ ] T005 [P] Implement `StorageSettings` in `src/knowledge_platform/config.py` using `pydantic-settings` with field aliases for `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD`, `MINIO_HOST`, `MINIO_PORT`, `MINIO_CONSOLE_PORT`, `MINIO_DEFAULT_BUCKET`, and properties for `endpoint_url` and `console_url` per `specs/001-local-object-storage/data-model.md`
 - [ ] T006 [P] Implement Pydantic domain models `DocumentMetadata` and `BucketStatus` in `src/knowledge_platform/storage/models.py` with validation rules (key non-empty max 1024 chars, size_bytes >= 0, content_type, etag, last_modified) per `specs/001-local-object-storage/data-model.md`
-- [ ] T007 Implement package exports in `src/knowledge_platform/__init__.py` and `src/knowledge_platform/storage/__init__.py`
+- [ ] T006a [P] Implement domain exception hierarchy in `src/knowledge_platform/storage/exceptions.py` (`StorageError`, `BucketNotFoundError`, `DocumentNotFoundError`, `StorageConnectionError`) per `specs/001-local-object-storage/contracts/storage-client-contract.md`
+- [ ] T007 Implement package exports in `src/knowledge_platform/__init__.py` and `src/knowledge_platform/storage/__init__.py` exporting models and domain exceptions
 
 **Checkpoint**: Foundation ready — service orchestration and user stories can now begin
 
@@ -82,12 +83,12 @@ description: "Task list for local object storage implementation"
 ### Implementation for User Story 3
 
 - [ ] T013 [P] [US3] Implement `AsyncStorageClientProtocol` in `src/knowledge_platform/storage/client.py` defining `verify_bucket_exists`, `list_documents`, `get_document_stream`, `get_document_bytes`, and `put_document_bytes` per `specs/001-local-object-storage/contracts/storage-client-contract.md`
-- [ ] T014 [US3] Implement `AsyncStorageClient` class in `src/knowledge_platform/storage/client.py` using `aioboto3.Session` with context management (`__aenter__` and `__aexit__`) to connect to MinIO S3 API at `endpoint_url`
-- [ ] T015 [US3] Implement `verify_bucket_exists` method in `src/knowledge_platform/storage/client.py` using `head_bucket`
-- [ ] T016 [US3] Implement `list_documents` method in `src/knowledge_platform/storage/client.py` using `list_objects_v2` paginator and mapping results to `DocumentMetadata`
-- [ ] T017 [US3] Implement `get_document_stream` and `get_document_bytes` methods in `src/knowledge_platform/storage/client.py` streaming chunked bytes from S3 `get_object`
+- [ ] T014 [US3] Implement `AsyncStorageClient` class in `src/knowledge_platform/storage/client.py` using `aioboto3.Session` with context management (`__aenter__` and `__aexit__`) to connect to MinIO S3 API at `endpoint_url`, wrapping connection failures in `StorageConnectionError`
+- [ ] T015 [US3] Implement `verify_bucket_exists` method in `src/knowledge_platform/storage/client.py` using `head_bucket`, catching connection errors as `StorageConnectionError`
+- [ ] T016 [US3] Implement `list_documents` method in `src/knowledge_platform/storage/client.py` using `list_objects_v2` paginator and mapping results to `DocumentMetadata`, raising `BucketNotFoundError` if the bucket does not exist
+- [ ] T017 [US3] Implement `get_document_stream` and `get_document_bytes` methods in `src/knowledge_platform/storage/client.py` streaming chunked bytes from S3 `get_object`, raising `BucketNotFoundError` or `DocumentNotFoundError` for missing targets
 - [ ] T018 [US3] Implement `put_document_bytes` helper in `src/knowledge_platform/storage/client.py` using S3 `put_object` for test harness seeding
-- [ ] T019 [US3] Implement asynchronous integration tests in `tests/integration/test_object_storage.py` verifying bucket existence, document upload, listing, streaming, and checksum matching against live MinIO container
+- [ ] T019 [US3] Implement asynchronous integration tests in `tests/integration/test_object_storage.py` verifying bucket existence, document upload, listing, streaming, checksum matching, and domain exception raising (`BucketNotFoundError`, `DocumentNotFoundError`) against live MinIO container
 
 **Checkpoint**: All user stories are implemented and verified — downstream services have full async programmatic access to `knowledge-source`
 
@@ -124,7 +125,7 @@ description: "Task list for local object storage implementation"
 ### Parallel Opportunities
 
 - Phase 1: `T002` and `T003` can run in parallel
-- Phase 2: `T005` (`config.py`) and `T006` (`models.py`) can run in parallel
+- Phase 2: `T005` (`config.py`), `T006` (`models.py`), and `T006a` (`exceptions.py`) can run in parallel
 - Phase 4: `T011` (web console HTTP test) can run in parallel with client protocol definition `T013`
 - Phase 6: `T020` and `T021` can run in parallel
 

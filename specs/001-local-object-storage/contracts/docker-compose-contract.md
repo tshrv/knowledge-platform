@@ -17,6 +17,7 @@ Defines the containerized local object storage service using MinIO and an automa
 |---|---|---|---|
 | `MINIO_ROOT_USER` | Yes | `admin` | Administrator username for MinIO API and Web Console |
 | `MINIO_ROOT_PASSWORD` | Yes | `minioadmin123` | Administrator password (minimum 8 characters) |
+| `MINIO_HOST` | No | `localhost` | Hostname or container network alias for MinIO service |
 | `MINIO_PORT` | No | `9000` | Host port mapped to MinIO S3 API |
 | `MINIO_CONSOLE_PORT` | No | `9001` | Host port mapped to MinIO Web Management Console |
 | `MINIO_DEFAULT_BUCKET`| No | `knowledge-source` | Canonical bucket created on initial startup |

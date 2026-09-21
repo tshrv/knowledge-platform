@@ -19,6 +19,7 @@ The local object storage domain consists of three core logical entities:
 |---------------------------------------|
 | minio_root_user: str                  |
 | minio_root_password: str              |
+| minio_host: str                       |
 | minio_port: int                       |
 | minio_console_port: int               |
 | minio_default_bucket: str             |
@@ -98,6 +99,11 @@ class StorageSettings(BaseSettings):
         alias="MINIO_ROOT_PASSWORD",
         description="Root administrative password for MinIO",
     )
+    minio_host: str = Field(
+        default="localhost",
+        alias="MINIO_HOST",
+        description="Hostname or container network alias for MinIO service",
+    )
     minio_port: int = Field(
         default=9000,
         ge=1024,
@@ -122,12 +128,12 @@ class StorageSettings(BaseSettings):
     @property
     def endpoint_url(self) -> str:
         """Construct the local S3 endpoint URL."""
-        return f"http://localhost:{self.minio_port}"
+        return f"http://{self.minio_host}:{self.minio_port}"
 
     @property
     def console_url(self) -> str:
         """Construct the local web console URL."""
-        return f"http://localhost:{self.minio_console_port}"
+        return f"http://{self.minio_host}:{self.minio_console_port}"
 ```
 
 ---
