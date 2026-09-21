@@ -1,0 +1,7 @@
+[project]
+name = "knowledge-platform"
+version = "0.1.0"
+description = "A production-grade RAG and agent platform for document ingestion, enrichment, hybrid retrieval, reranking, reasoning, evaluation, and observability."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
