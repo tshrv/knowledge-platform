@@ -1,50 +1,74 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+# Sync Impact Report
+- Version change: 1.1.0 → 2.0.0
+- Modified principles:
+  - Principle I: Expanded "Maintainability & Reliability Over Shortcuts" to mandate documented architectural trade-offs, universal user input validation, and Pydantic models for complex data structures.
+  - Principle III: Redefined from "Test-Driven Verification & Quality Assurance" to "End-to-End Integration Verification Over Mocks", skipping unit tests by default, prohibiting mocks in standard verification, and mandating real end-to-end integration tests across actual components.
+  - Principle IV: Expanded "Containerized Component Isolation via Docker Compose" to mandate minimal Docker images and support separate dev/test environments.
+- Added sections / policies:
+  - Architectural decision documentation gate requiring explicit rationale, benefits, and trade-offs.
+  - Mandatory Pydantic schema validation at system boundaries for all user inputs.
+- Removed sections: None
+- Follow-up TODOs: None
+-->
+
+# Knowledge Platform Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Maintainability & Reliability Over Shortcuts (NON-NEGOTIABLE)
+Code MUST prioritize long-term maintainability, readability, and reliability over expedience or temporary shortcuts. Architecture MUST remain modular with explicit domain boundaries, clear interfaces, and comprehensive typing. Every significant architectural decision MUST be backed by documented reasons, expected benefits, and analyzed trade-offs. All user inputs MUST be strictly validated at system boundaries before entering internal processing pipelines. Type hints are mandatory across all Python code; whenever primitive types (e.g., nested dictionaries, arbitrary tuples, loose parameters) become complex, developers MUST define explicit Pydantic models to ensure clarity, self-documentation, and runtime validation. Failures MUST be handled defensively and gracefully with explicit domain exceptions and structured context; silent error suppression is strictly forbidden.
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+*Rationale: Production AI platforms compound technical debt rapidly if shortcuts are tolerated. Legible architecture, documented trade-offs, strict boundary validation, and clear data models ensure long-term stability and maintainability.*
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### II. Vertex AI Integration & API Key Authentication
+All large language model (LLM) and agent capabilities MUST interface through Google Cloud Platform's agent platform (Vertex AI). Vertex AI access MUST be configured explicitly using the API key authentication method rather than ambient or implicit machine credentials, ensuring uniform credential scoping across development and deployment. API keys MUST NEVER be hardcoded, committed to version control, or exposed in logs; they MUST be injected via environment variables. LLM client integrations MUST be decoupled behind clean gateway interfaces with explicit configuration to support robust end-to-end execution.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+*Rationale: Explicit API key configuration isolates credential boundaries and guarantees reproducible access patterns across WSL local environments and automated pipelines.*
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### III. End-to-End Integration Verification Over Mocks (NON-NEGOTIABLE)
+Verification MUST center on real integration tests running actual features end-to-end across all participating components and verifying the final result. Mocking is strictly prohibited in standard verification workflows; tests MUST exercise real component wiring, genuine external service interactions, and live pipelines. Unless explicitly needed for isolated, high-complexity algorithmic logic, unit tests MUST be skipped in favor of end-to-end integration coverage. Separate development and test environments of services (e.g., dedicated test containers in Docker Compose) MAY be established when needed to execute tests reliably without state pollution.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+*Rationale: In complex AI and data platforms, unit tests and mocks routinely mask real integration failures, schema drift, and network protocol breakages. Real end-to-end tests provide authentic confidence in system behavior.*
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+### IV. Containerized Component Isolation & Minimal Images
+Any supporting infrastructure or stateful service requirement (such as relational databases, vector stores, caching layers, or search indexes) MUST be containerized using Docker. All service dependencies MUST be formally defined, networked, and configured in `docker-compose.yml`, providing distinct development and test configurations where needed. Docker images MUST be kept minimal by employing multi-stage builds, slim base images, and strict exclusion of build-time caches and tools. Developers and automated tests MUST NOT rely on uncontained, natively installed services on the host machine.
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+*Rationale: Docker Compose provides reproducible, isolated local environments that maintain parity with production infrastructure, while minimal container images reduce attack surface, build latency, and deployment overhead.*
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+### V. Deterministic Development Tooling via WSL & UV
+The sanctioned local development platform is Linux running on Windows Subsystem for Linux (WSL/Ubuntu). All Python runtime, virtual environment, and dependency management MUST be executed exclusively through `uv`. Dependency specifications and lockfiles (`uv.lock`) MUST be committed and strictly enforced across environments. Direct usage of unmanaged global interpreters, raw pip, or competing package managers is prohibited in project workflows.
+
+*Rationale: Standardizing on WSL and uv ensures instantaneous, reproducible dependency resolution and eliminates platform-specific packaging divergence.*
+
+## Technology Stack & Environment Standards
+- **Runtime & Environment**: Python 3.12+ on Ubuntu (WSL).
+- **Dependency Management**: `uv` for package management, virtual environment isolation, and script execution (`uv run`).
+- **AI & Agent Foundation**: GCP Vertex AI (Agent Platform) initialized via explicit API key authentication.
+- **Data Modeling & Validation**: Mandatory type hints across all Python code; Pydantic models for all user input validation, complex payload definitions, and structured domain entities.
+- **Infrastructure Services**: Docker & Docker Compose with minimal images (multi-stage builds, slim bases) for all stateful dependencies; separate dev and test service environments when required.
+- **Configuration & Secrets**: Twelve-factor configuration using environment variables and git-ignored `.env` files; template `.env.example` must be kept up to date without real credentials.
+
+## Quality Gates & Development Workflow
+- **Architectural Decision Reviews**: Every significant architectural choice MUST document its rationale, expected benefits, and trade-offs before implementation.
+- **Boundary Validation**: All user inputs and public interface parameters MUST be validated via Pydantic models prior to business logic execution.
+- **Linting & Code Formatting**: Code MUST pass strict linting and formatting checks (via Ruff) before commit with zero tolerance for unresolved errors.
+- **Static Type Safety**: Full type annotations are mandatory across all public and internal interfaces, validated via static type checking.
+- **Integration Testing Gates**: Test suites MUST execute end-to-end feature verification (`uv run pytest`) against live or containerized components without mocking. Unit tests are skipped by default unless explicitly needed.
+- **Infrastructure & Image Validation**: Compose configurations must validate (`docker compose config`), boot cleanly (`docker compose up -d`), and Dockerfile definitions must enforce minimal image layers.
+- **Version Control & Git Policy (Manual Commits Only)**: Automated agents, AI assistants, and background tools MUST NEVER execute `git commit`, `git push`, or manipulate repository history. Commits, branch pushes, and git history modifications are strictly reserved for the human developer. Agents may propose changes and draft suggested commit messages, but MUST NOT execute the commit.
+- **Review Criteria**: Pull requests and code changes MUST be evaluated against constitutional non-negotiables: no shortcuts, end-to-end integration verification, explicit Pydantic data modeling, and complete interface readability.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
+This Constitution represents the supreme architectural and operational authority for the Knowledge Platform. It supersedes informal agreements, quick fixes, and ad-hoc practices. Any architectural deviation or compromise of maintainability MUST be rejected during review.
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+All git commits, merges, releases, and repository state transitions MUST be manually executed by the human developer; automated tools are strictly prohibited from committing changes.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+Amendments to this Constitution require documenting the proposal, evaluating downstream architectural impact, and reaching explicit maintainer consensus. Constitution versions follow Semantic Versioning:
+- **MAJOR**: Incompatible principle removals, redefinitions (such as testing philosophy shifts), or foundational architectural pivots.
+- **MINOR**: Addition of new principles, material expansion of quality gates, or stack additions.
+- **PATCH**: Wording improvements, clarifications, or non-semantic guideline refinements.
+
+Compliance audits MUST occur during every specification, planning, and code review cycle to guarantee ongoing adherence.
+
+**Version**: 2.0.0 | **Ratified**: 2026-09-21 | **Last Amended**: 2026-09-21
