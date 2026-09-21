@@ -1,13 +1,10 @@
 <!--
 # Sync Impact Report
-- Version change: 1.1.0 → 2.0.0
-- Modified principles:
-  - Principle I: Expanded "Maintainability & Reliability Over Shortcuts" to mandate documented architectural trade-offs, universal user input validation, and Pydantic models for complex data structures.
-  - Principle III: Redefined from "Test-Driven Verification & Quality Assurance" to "End-to-End Integration Verification Over Mocks", skipping unit tests by default, prohibiting mocks in standard verification, and mandating real end-to-end integration tests across actual components.
-  - Principle IV: Expanded "Containerized Component Isolation via Docker Compose" to mandate minimal Docker images and support separate dev/test environments.
+- Version change: 2.0.0 → 2.1.0
+- Modified principles: None
 - Added sections / policies:
-  - Architectural decision documentation gate requiring explicit rationale, benefits, and trade-offs.
-  - Mandatory Pydantic schema validation at system boundaries for all user inputs.
+  - Quality Gates & Development Workflow: Added "Artifact Ownership & Out-of-Scope Files" reserving `design.excalidraw.png` exclusively for human maintainer editing and prohibiting agent modification.
+  - Governance: Formally codified human ownership boundaries over visual design artifacts.
 - Removed sections: None
 - Follow-up TODOs: None
 -->
@@ -56,13 +53,14 @@ The sanctioned local development platform is Linux running on Windows Subsystem 
 - **Static Type Safety**: Full type annotations are mandatory across all public and internal interfaces, validated via static type checking.
 - **Integration Testing Gates**: Test suites MUST execute end-to-end feature verification (`uv run pytest`) against live or containerized components without mocking. Unit tests are skipped by default unless explicitly needed.
 - **Infrastructure & Image Validation**: Compose configurations must validate (`docker compose config`), boot cleanly (`docker compose up -d`), and Dockerfile definitions must enforce minimal image layers.
+- **Artifact Ownership & Out-of-Scope Files**: The file `design.excalidraw.png` is reserved strictly for human developer maintenance. Automated agents, AI assistants, and background tools MUST NOT create, edit, overwrite, delete, or alter `design.excalidraw.png`.
 - **Version Control & Git Policy (Manual Commits Only)**: Automated agents, AI assistants, and background tools MUST NEVER execute `git commit`, `git push`, or manipulate repository history. Commits, branch pushes, and git history modifications are strictly reserved for the human developer. Agents may propose changes and draft suggested commit messages, but MUST NOT execute the commit.
 - **Review Criteria**: Pull requests and code changes MUST be evaluated against constitutional non-negotiables: no shortcuts, end-to-end integration verification, explicit Pydantic data modeling, and complete interface readability.
 
 ## Governance
 This Constitution represents the supreme architectural and operational authority for the Knowledge Platform. It supersedes informal agreements, quick fixes, and ad-hoc practices. Any architectural deviation or compromise of maintainability MUST be rejected during review.
 
-All git commits, merges, releases, and repository state transitions MUST be manually executed by the human developer; automated tools are strictly prohibited from committing changes.
+All git commits, merges, releases, and repository state transitions MUST be manually executed by the human developer; automated tools are strictly prohibited from committing changes. Human-owned design assets, including `design.excalidraw.png`, are strictly outside the write scope of automated agents.
 
 Amendments to this Constitution require documenting the proposal, evaluating downstream architectural impact, and reaching explicit maintainer consensus. Constitution versions follow Semantic Versioning:
 - **MAJOR**: Incompatible principle removals, redefinitions (such as testing philosophy shifts), or foundational architectural pivots.
@@ -71,4 +69,4 @@ Amendments to this Constitution require documenting the proposal, evaluating dow
 
 Compliance audits MUST occur during every specification, planning, and code review cycle to guarantee ongoing adherence.
 
-**Version**: 2.0.0 | **Ratified**: 2026-09-21 | **Last Amended**: 2026-09-21
+**Version**: 2.1.0 | **Ratified**: 2026-09-21 | **Last Amended**: 2026-09-21
