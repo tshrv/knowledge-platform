@@ -46,6 +46,25 @@
 - [ ] CHK022 - Does the specification mandate unmocked, live-container integration testing in compliance with project constitutional principles? [Traceability, Plan §Constitution Check, Constitution §III]
 - [ ] CHK023 - Are data persistence verification steps defined to confirm zero data loss across container teardown and recreation cycles? [Measurability, Spec §SC-005, Quickstart §Scenario 3]
 
+## 6. Security, Credential & Secret Governance Requirements
+
+- [ ] CHK024 - Are password complexity and minimum length rules (>=8 characters) for `MINIO_ROOT_PASSWORD` documented as strict validation constraints? [Completeness, Data Model §2.3, Contract §Docker-Compose]
+- [ ] CHK025 - Are credential isolation requirements specified to prevent `.env` secrets from leaking into container build logs or version control? [Security, Constitution §II, Spec §Assumptions]
+- [ ] CHK026 - Is the permission boundary between the administrative root user and potential read-only application access explicitly documented or scoped? [Clarity, Spec §FR-004, Spec §Key Entities]
+
+## 7. Client Exception Hierarchy & Resilience Requirements
+
+- [ ] CHK027 - Are explicit domain exception classes (e.g., `BucketNotFoundError`, `DocumentNotFoundError`, `StorageConnectionError`) specified for client error handling without silent suppression? [Completeness, Constitution §I, Contract §Storage-Client]
+- [ ] CHK028 - Are connection and read timeout thresholds specified for client calls to prevent indefinite coroutine blocking during storage outages? [Clarity, Spec §FR-006, Contract §Storage-Client]
+- [ ] CHK029 - Are pagination and prefix filtering behaviors specified when `list_documents` encounters large object counts in `knowledge-source`? [Coverage, Contract §Storage-Client]
+- [ ] CHK030 - Are concurrency semantics defined for overlapping read and write operations on identical object keys? [Edge Case, Spec §Edge Cases]
+
+## 8. Environment Teardown & Constitutional Governance Requirements
+
+- [ ] CHK031 - Are explicit commands and expectations defined for volume preservation (`docker compose down`) versus complete state reset (`docker compose down -v`)? [Clarity, Quickstart §Scenarios, Spec §FR-005]
+- [ ] CHK032 - Are Ruff linting, formatting, and strict type annotation validation commands defined as pre-implementation review gates? [Traceability, Constitution §Quality Gates]
+- [ ] CHK033 - Is the manual git commit policy and human-only ownership boundary over `design.excalidraw.png` verified within feature execution boundaries? [Governance, Constitution §Governance]
+
 ## Notes
 
 - Mark items `[x]` only after review confirms the requirement-quality criterion is satisfied

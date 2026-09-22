@@ -27,7 +27,7 @@ Defines the containerized local object storage service using MinIO and an automa
 ## 3. Service Definitions Specification
 
 ### 3.1 Service: `minio`
-- **Image**: `minio/minio:RELEASE.2024-11-07T00-52-19Z`
+- **Image**: `quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z`
 - **Command**: `server /data --console-address ":9001"`
 - **Ports**:
   - `"${MINIO_PORT:-9000}:9000"` (S3 API)
@@ -46,7 +46,7 @@ Defines the containerized local object storage service using MinIO and an automa
 - **Restart Policy**: `unless-stopped`
 
 ### 3.2 Service: `minio-create-bucket` (Init Container)
-- **Image**: `minio/mc:RELEASE.2024-11-05T11-41-28Z`
+- **Image**: `quay.io/minio/mc:RELEASE.2025-08-13T08-35-41Z`
 - **Depends On**:
   - `minio`: `condition: service_started`
 - **Entrypoint**: `/bin/sh`
