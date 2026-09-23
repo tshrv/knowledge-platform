@@ -1,10 +1,11 @@
 <!--
 # Sync Impact Report
-- Version change: 2.0.0 → 2.1.0
+- Version change: 2.2.0 → 2.3.0
 - Modified principles: None
 - Added sections / policies:
-  - Quality Gates & Development Workflow: Added "Artifact Ownership & Out-of-Scope Files" reserving `design.excalidraw.png` exclusively for human maintainer editing and prohibiting agent modification.
-  - Governance: Formally codified human ownership boundaries over visual design artifacts.
+  - Core Principles: Added "VI. Structured Contextual Logging via Loguru (NON-NEGOTIABLE)" mandating `loguru` for all Python logging, accompanied by human-readable messages and structured filtering metadata (unique IDs, entity keys, correlation IDs).
+  - Technology Stack & Environment Standards: Added `loguru` as the sanctioned observability standard and strictly prohibited raw `print()` statements.
+  - Quality Gates & Development Workflow: Added "Structured Logging Standards" quality gate.
 - Removed sections: None
 - Follow-up TODOs: None
 -->
@@ -38,10 +39,16 @@ The sanctioned local development platform is Linux running on Windows Subsystem 
 
 *Rationale: Standardizing on WSL and uv ensures instantaneous, reproducible dependency resolution and eliminates platform-specific packaging divergence.*
 
+### VI. Structured Contextual Logging via Loguru (NON-NEGOTIABLE)
+Comprehensive, structured logging is NON-NEGOTIABLE across the platform. All Python logging MUST be implemented exclusively using `loguru`. Standard library `logging` and raw `print()` statements in application code are strictly prohibited. Every log record MUST include a clear, descriptive human-readable message alongside structured contextual metadata (e.g., unique request IDs, execution/job IDs, object keys, session tokens, or entity identifiers) to enable precise filtering, correlation, and searchability across distributed processing pipelines and async workflows. Uncontextualized, generic log statements lacking situational metadata are forbidden at system boundaries and critical operational paths.
+
+*Rationale: Distributed AI and retrieval pipelines involve concurrent, asynchronous operations across components. Standardizing on Loguru with structured contextual metadata guarantees immediate observability, trace correlation, and rapid failure diagnosis in production.*
+
 ## Technology Stack & Environment Standards
 - **Runtime & Environment**: Python 3.12+ on Ubuntu (WSL).
 - **Dependency Management**: `uv` for package management, virtual environment isolation, and script execution (`uv run`).
 - **AI & Agent Foundation**: GCP Vertex AI (Agent Platform) initialized via explicit API key authentication.
+- **Observability & Structured Logging**: `loguru` for structured, contextual logging across all Python modules; raw `print()` statements are strictly forbidden.
 - **Data Modeling & Validation**: Mandatory type hints across all Python code; Pydantic models for all user input validation, complex payload definitions, and structured domain entities.
 - **Infrastructure Services**: Docker & Docker Compose with minimal images (multi-stage builds, slim bases) for all stateful dependencies; separate dev and test service environments when required.
 - **Configuration & Secrets**: Twelve-factor configuration using environment variables and git-ignored `.env` files; template `.env.example` must be kept up to date without real credentials.
@@ -49,18 +56,19 @@ The sanctioned local development platform is Linux running on Windows Subsystem 
 ## Quality Gates & Development Workflow
 - **Architectural Decision Reviews**: Every significant architectural choice MUST document its rationale, expected benefits, and trade-offs before implementation.
 - **Boundary Validation**: All user inputs and public interface parameters MUST be validated via Pydantic models prior to business logic execution.
+- **Structured Logging Standards**: All business logic, system boundaries, and asynchronous pipelines MUST emit structured Loguru events bound with contextual attributes (e.g., entity IDs, operation keys, trace IDs); unformatted print statements or unstructured logs will fail review.
 - **Linting & Code Formatting**: Code MUST pass strict linting and formatting checks (via Ruff) before commit with zero tolerance for unresolved errors.
 - **Static Type Safety**: Full type annotations are mandatory across all public and internal interfaces, validated via static type checking.
 - **Integration Testing Gates**: Test suites MUST execute end-to-end feature verification (`uv run pytest`) against live or containerized components without mocking. Unit tests are skipped by default unless explicitly needed.
 - **Infrastructure & Image Validation**: Compose configurations must validate (`docker compose config`), boot cleanly (`docker compose up -d`), and Dockerfile definitions must enforce minimal image layers.
-- **Artifact Ownership & Out-of-Scope Files**: The file `design.excalidraw.png` is reserved strictly for human developer maintenance. Automated agents, AI assistants, and background tools MUST NOT create, edit, overwrite, delete, or alter `design.excalidraw.png`.
+- **Artifact Ownership & Out-of-Scope Files**: The directory `.notes/` and the file `design.excalidraw.png` are reserved strictly for human maintainer use. Although `.notes/` is tracked and committed in git by the developer, automated agents, AI assistants, and background tools MUST ignore `.notes/` completely: agents MUST NOT read, inspect, create, edit, overwrite, delete, reference, or alter any files within `.notes/`. Similarly, automated agents MUST NOT create, edit, overwrite, delete, or alter `design.excalidraw.png`.
 - **Version Control & Git Policy (Manual Commits Only)**: Automated agents, AI assistants, and background tools MUST NEVER execute `git commit`, `git push`, or manipulate repository history. Commits, branch pushes, and git history modifications are strictly reserved for the human developer. Agents may propose changes and draft suggested commit messages, but MUST NOT execute the commit.
 - **Review Criteria**: Pull requests and code changes MUST be evaluated against constitutional non-negotiables: no shortcuts, end-to-end integration verification, explicit Pydantic data modeling, and complete interface readability.
 
 ## Governance
 This Constitution represents the supreme architectural and operational authority for the Knowledge Platform. It supersedes informal agreements, quick fixes, and ad-hoc practices. Any architectural deviation or compromise of maintainability MUST be rejected during review.
 
-All git commits, merges, releases, and repository state transitions MUST be manually executed by the human developer; automated tools are strictly prohibited from committing changes. Human-owned design assets, including `design.excalidraw.png`, are strictly outside the write scope of automated agents.
+All git commits, merges, releases, and repository state transitions MUST be manually executed by the human developer; automated tools are strictly prohibited from committing changes. Human-owned design and personal note assets, including `.notes/` and `design.excalidraw.png`, are strictly outside the scope of automated agents; agents must completely ignore `.notes/`.
 
 Amendments to this Constitution require documenting the proposal, evaluating downstream architectural impact, and reaching explicit maintainer consensus. Constitution versions follow Semantic Versioning:
 - **MAJOR**: Incompatible principle removals, redefinitions (such as testing philosophy shifts), or foundational architectural pivots.
@@ -69,4 +77,4 @@ Amendments to this Constitution require documenting the proposal, evaluating dow
 
 Compliance audits MUST occur during every specification, planning, and code review cycle to guarantee ongoing adherence.
 
-**Version**: 2.1.0 | **Ratified**: 2026-09-21 | **Last Amended**: 2026-09-21
+**Version**: 2.3.0 | **Ratified**: 2026-09-21 | **Last Amended**: 2026-09-22

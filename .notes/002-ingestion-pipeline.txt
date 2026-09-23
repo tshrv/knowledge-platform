@@ -1,0 +1,66 @@
++----------------------------------------+
+/speckit-constitution (once per project) |
++----------------------------------------+
+.notes folder will be commited in git, but you have to ignore it completely.
+it is for me to work on only.
+Logging is non-negotable. Use loguru for python, put a proper message with text message as well as other necessary data based on which logs can be filtered like unique id, etc.
+
++----------------------------------------+
+/speckit-specify                         |
++----------------------------------------+
+Create an ingestion pipeline
+The pipeline should take a directory path in object storage, and recursively browse all files in there.
+Only work for pdf files for now. Any other file, ignore.
+Each run of the ingestion pipeline is to be considered an "execution"
+In every execution, all files discovered should be recorded in a database, with their path, last modified timestamp, a unique document id etc.
+Define some status values that records the action status for these files in each execution like, created (newly created), deleted (previously added but now deleted since file not found in that path), updated (file exists in same place but last modified time is later than what exists in record), etc.
+Based on this, categorise files into created(add to knowledge base), updated(update knowledge base) and deleted (remove from knowledge base).
+Download file one at a time, parse it, convert to markdown to retain hierarchial structure, store markdown in object storage, save object storage markdown file path in database record as well.
+Now, the markdown content needs to be divided into chunks, first by headers 1, 2 and 3, then by 1000 characters, along with a 100 character overlap.
+Assign a unique id to each chunk, and a document id, that this chunk belongs to this document.
+Also, keep a sequential chunk index and each chunk should know how many total chunks are there.
+In each chunk, keep the metadata for reference, like header 1, header 2, header 3, etc. whatever is applicable, ensuring to retain important metadata in each chunk.
+Next, each chunk's content should be converted into embeddings and stored into a vector database, along with metadata.
+The complete process should log events in all necessary places, with the execution id, document id, chunk id, etc. keeping logs as much relevant as possible.
+
++----------------------------------------+
+/speckit-clarify                         |
++----------------------------------------+
+when chunking a document, keep the file name in the metadata as well, along with other hierarchial information.
+
+
++----------------------------------------+
+/speckit-plan                            |
++----------------------------------------+
+Use markitdown for pdf to markdown conversion.
+Use Qdrant as vector store, via docker
+use Mongodb (via docker) to store execution and document records, use async client with pydantic if reasonable. Can discuss more if needed.
+Can use langchain as framework (open for discussion if needed)
+Allow a flag via env, which ensures that on ingestion trigger, the vector db and document records are cleared completely, for fresh ingestion.
+For embedding generation, use gcp's vertexai (agent platform models), start with "gemini-embedding-001" for now, via the api key way
+
+
++----------------------------------------+
+/speckit-checklist                       |
++----------------------------------------+
+
+
++----------------------------------------+
+/speckit-tasks                           |
++----------------------------------------+
+
+
++----------------------------------------+
+/speckit-analyze                         |
++----------------------------------------+
+
+
++----------------------------------------+
+/speckit-implement                       |
++----------------------------------------+
+> discovered unchecked items in ingestion.md
+Go through checklist/ingestion.md against spec.md and check off any item that's clearly and unambiguously covered; leave the rest unchecked and tell me what's missing for each
+
++----------------------------------------+
+/speckit-converge                        |
++----------------------------------------+

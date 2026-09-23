@@ -96,6 +96,15 @@ class AsyncStorageClientProtocol(Protocol):
         """
         ...
 
+    async def delete_document(self, bucket_name: str, key: str) -> None:
+        """Asynchronously delete an object from a bucket.
+
+        Raises:
+            BucketNotFoundError: If bucket_name does not exist.
+            StorageConnectionError: If MinIO is unreachable.
+        """
+        ...
+
 
 class AsyncStorageClient:
     """Concrete asynchronous storage client connecting to MinIO via aioboto3."""
@@ -120,7 +129,27 @@ class AsyncStorageClient:
             return self
         except (EndpointConnectionError, ConnectionError) as exc:
             raise StorageConnectionError(
-                f"Failed to connect to MinIO at {self.settings.endpoint_url}: {exc}"
+                f"Connection error reaching storage service: {exc}"
+            ) from exc
+
+    async def delete_document(self, bucket_name: str, key: str) -> None:
+        """Asynchronously delete an object from a bucket."""
+        client = self._require_client()
+        if not await self.verify_bucket_exists(bucket_name):
+            raise BucketNotFoundError(bucket_name)
+
+        try:
+            await client.delete_object(Bucket=bucket_name, Key=key)
+        except ClientError as exc:
+            error_code = exc.response.get("Error", {}).get("Code", "")
+            if error_code in ("404", "NoSuchBucket"):
+                raise BucketNotFoundError(bucket_name) from exc
+            raise StorageError(
+                f"Failed to delete document '{key}' from bucket '{bucket_name}': {exc}"
+            ) from exc
+        except (EndpointConnectionError, ConnectionError) as exc:
+            raise StorageConnectionError(
+                f"Connection error reaching storage service: {exc}"
             ) from exc
         except Exception as exc:
             raise StorageConnectionError(
